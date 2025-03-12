@@ -54,4 +54,37 @@ export class AuthController {
       ),
     );
   }
+
+  /**
+   * Solicita un token para recuperar la contraseña.
+   * @param email Email del usuario.
+   */
+  @Post('request-password-reset')
+  requestPasswordReset(@Body() { email }: { email: string }): Observable<any> {
+    return this.client
+      .send('auth.request-password-reset', { email })
+      .pipe(
+        catchError(({ statusCode, message }) =>
+          throwError(() => new HttpException(message, statusCode)),
+        ),
+      );
+  }
+
+  /**
+   * Cambia la contraseña utilizando el token de recuperación.
+   * @param token Token enviado al email.
+   * @param newPassword Nueva contraseña.
+   */
+  @Post('reset-password')
+  resetPassword(
+    @Body() { token, newPassword }: { token: string; newPassword: string },
+  ): Observable<any> {
+    return this.client
+      .send('auth.reset-password', { token, newPassword })
+      .pipe(
+        catchError(({ statusCode, message }) =>
+          throwError(() => new HttpException(message, statusCode)),
+        ),
+      );
+  }
 }
