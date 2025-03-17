@@ -1,15 +1,11 @@
 import { Body, Controller, Post, HttpException } from '@nestjs/common';
-import { Client, ClientProxy, Transport } from '@nestjs/microservices';
 import { Observable, catchError, throwError } from 'rxjs';
-import { LoginUserDTO } from 'src/models/login-user.dto';
+import { LoginUserDTO } from 'src/auth/dto/login-user.dto';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-  @Client({
-    transport: Transport.TCP,
-    options: { host: 'localhost', port: 4000 },
-  })
-  private readonly client: ClientProxy;
+  constructor(private readonly authService: AuthService) {}
 
   /**
    * Maneja el inicio de sesión de un usuario.
@@ -18,19 +14,13 @@ export class AuthController {
    */
   @Post('login')
   login(@Body() loginUserDto: LoginUserDTO): Observable<any> {
-    return this.client.send('auth.login', loginUserDto).pipe(
-      catchError(
-        ({
-          statusCode,
-          message,
-        }: {
-          statusCode: number;
-          message: string | Record<string, any>;
-        }) => {
-          return throwError(() => new HttpException(message, statusCode));
-        },
-      ),
-    );
+    return this.authService
+      .login(loginUserDto)
+      .pipe(
+        catchError(({ statusCode, message }) =>
+          throwError(() => new HttpException(message, statusCode)),
+        ),
+      );
   }
 
   /**
@@ -40,19 +30,13 @@ export class AuthController {
    */
   @Post('refresh')
   refreshToken(@Body() refreshToken: string): Observable<any> {
-    return this.client.send('auth.refresh', refreshToken).pipe(
-      catchError(
-        ({
-          statusCode,
-          message,
-        }: {
-          statusCode: number;
-          message: string | Record<string, any>;
-        }) => {
-          return throwError(() => new HttpException(message, statusCode));
-        },
-      ),
-    );
+    return this.authService
+      .refreshToken(refreshToken)
+      .pipe(
+        catchError(({ statusCode, message }) =>
+          throwError(() => new HttpException(message, statusCode)),
+        ),
+      );
   }
 
   /**
@@ -61,8 +45,8 @@ export class AuthController {
    */
   @Post('request-password-reset')
   requestPasswordReset(@Body() { email }: { email: string }): Observable<any> {
-    return this.client
-      .send('auth.request-password-reset', { email })
+    return this.authService
+      .requestPasswordReset(email)
       .pipe(
         catchError(({ statusCode, message }) =>
           throwError(() => new HttpException(message, statusCode)),
@@ -79,8 +63,8 @@ export class AuthController {
   resetPassword(
     @Body() { token, newPassword }: { token: string; newPassword: string },
   ): Observable<any> {
-    return this.client
-      .send('auth.reset-password', { token, newPassword })
+    return this.authService
+      .resetPassword(token, newPassword)
       .pipe(
         catchError(({ statusCode, message }) =>
           throwError(() => new HttpException(message, statusCode)),
