@@ -21,7 +21,6 @@ export class AuthGuard implements CanActivate {
         Request & { email?: string; headers: { authorization?: string } }
       >();
     const authHeader = request.headers.authorization;
-
     if (!authHeader) {
       throw new UnauthorizedException('Token no encontrado');
     }
